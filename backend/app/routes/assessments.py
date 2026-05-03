@@ -114,6 +114,81 @@ def _apply_skill_deltas(soldier: Soldier, deltas: dict) -> None:
         setattr(soldier, attr, round(max(0.0, min(1.0, current + delta)), 4))
 
 
+def _skill_deltas_from_cat_scores(cat_scores: dict) -> dict:
+    """
+    Convert T/P/U category scores (1–5 scale) to skill vector deltas (±0.1).
+    A score of 3 (P) produces 0 delta; T (5) → +0.1; U (1) → -0.1.
+    """
+    def _d(score: float | None) -> float:
+        if score is None:
+            return 0.0
+        return round((score - 3.0) / 20.0, 4)
+
+    planning     = cat_scores.get("Planning")
+    tactics      = cat_scores.get("Tactics")
+    decisiveness = cat_scores.get("Decisiveness")
+    time_mgmt    = cat_scores.get("Time Management")
+    atd          = cat_scores.get("Attention to Detail")
+
+    plan_dec_avg = None
+    if planning is not None and decisiveness is not None:
+        plan_dec_avg = (planning + decisiveness) / 2
+    elif planning is not None:
+        plan_dec_avg = planning
+    elif decisiveness is not None:
+        plan_dec_avg = decisiveness
+
+    return {
+        "leadership":      _d(decisiveness),
+        "decision_making": _d(plan_dec_avg),
+        "stress_tolerance": _d(time_mgmt),
+        "tactical":        _d(tactics),
+        "communication":   _d(atd),
+        "teamwork":        0.0,
+        "adaptability":    _d(time_mgmt),
+    }
+
+
+def _populate_scores_from_cat_scores(assessment: Assessment, cat_scores: dict) -> None:
+    """
+    Derive the five AI-score dimensions directly from structured T/P/U category
+    scores so the assessment always has scores even when no notes were provided.
+    Scores stay on the same 0–5 scale used by the AI scorer.
+    """
+    planning     = cat_scores.get("Planning")
+    tactics      = cat_scores.get("Tactics")
+    decisiveness = cat_scores.get("Decisiveness")
+    time_mgmt    = cat_scores.get("Time Management")
+    atd          = cat_scores.get("Attention to Detail")
+
+    present = [s for s in [planning, tactics, decisiveness, time_mgmt, atd] if s is not None]
+    if not present:
+        return
+
+    overall = sum(present) / len(present)
+
+    assessment.ai_analyzed         = True
+    assessment.score_leadership     = decisiveness if decisiveness is not None else overall
+    assessment.score_decision_quality = (
+        (planning + decisiveness) / 2
+        if planning is not None and decisiveness is not None
+        else (planning or decisiveness or overall)
+    )
+    assessment.score_stress_response = (
+        (decisiveness + time_mgmt) / 2
+        if decisiveness is not None and time_mgmt is not None
+        else (time_mgmt or overall)
+    )
+    assessment.score_tactical       = tactics if tactics is not None else overall
+    assessment.score_communication  = atd if atd is not None else overall
+
+    if not assessment.ai_summary:
+        score_lines = ", ".join(
+            f"{k}: {v:.1f}" for k, v in cat_scores.items() if v is not None
+        )
+        assessment.ai_summary = f"Structured evaluation scores — {score_lines}."
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -179,13 +254,17 @@ def submit_structured_eval(
         a.ump_decisiveness = cat_scores.get("Decisiveness")
         a.ump_tactics      = cat_scores.get("Tactics")
 
-    # AI scoring on notes if provided
+    # Always derive scores and skill deltas from T/P/U category scores
+    _populate_scores_from_cat_scores(a, cat_scores)
+    _apply_skill_deltas(soldier, _skill_deltas_from_cat_scores(cat_scores))
+    db.add(soldier)
+
+    # If evaluator notes are provided, run AI scoring and let it override/enrich
     if body.run_ai_scoring and body.notes:
         context = {"rank": soldier.rank, "unit": soldier.unit, "mos": soldier.mos}
         ai_result = score_assessment(body.notes, context)
         _populate_ai_scores(a, ai_result)
         _apply_skill_deltas(soldier, ai_result.get("skill_vector_delta", {}))
-        db.add(soldier)
 
     db.add(a)
     db.flush()  # get a.id before adding children

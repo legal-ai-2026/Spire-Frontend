@@ -370,7 +370,7 @@ export default function AssessPage() {
     }
   }
 
-  async function forwardToRanger(assessmentResult: Assessment) {
+  async function forwardToRanger(assessmentResult: Assessment & { category_scores?: Record<string, number> }) {
     setRangerRun(null); setRangerError(null); setRangerPolling(false);
     stopRangerPoll();
     try {
@@ -383,9 +383,27 @@ export default function AssessPage() {
       const soldierLabel = soldier
         ? `${soldier.rank} ${soldier.name} (${soldier.service_number})`
         : `Soldier #${soldierIdStr}`;
+
+      // Build score summary line to give Ranger AI numeric context
+      const scoreParts: string[] = [];
+      const cs = assessmentResult.category_scores ?? catScores;
+      if (cs && Object.keys(cs).length > 0) {
+        scoreParts.push(`Category scores: ${Object.entries(cs).map(([k, v]) => `${k}=${v.toFixed(1)}`).join(", ")}`);
+      }
+      if (assessmentResult.score_leadership != null) {
+        scoreParts.push(
+          `AI scores: Leadership=${assessmentResult.score_leadership.toFixed(1)}, ` +
+          `Decision=${assessmentResult.score_decision_quality?.toFixed(1)}, ` +
+          `Stress=${assessmentResult.score_stress_response?.toFixed(1)}, ` +
+          `Tactical=${assessmentResult.score_tactical?.toFixed(1)}, ` +
+          `Comms=${assessmentResult.score_communication?.toFixed(1)}`
+        );
+      }
+      const scoreBlock = scoreParts.length > 0 ? `\n${scoreParts.join("\n")}` : "";
+
       const free_text = captureMode === "structured"
-        ? buildRangerFreeText()
-        : (`[${CATEGORY_LABELS[evalCategory]}] ${soldierLabel}\n${assessmentResult.ai_summary ?? notes ?? ""}`).trim() || null;
+        ? (buildRangerFreeText() + scoreBlock).trim()
+        : (`[${CATEGORY_LABELS[evalCategory]}] ${soldierLabel}\n${assessmentResult.ai_summary ?? notes ?? ""}${scoreBlock}`).trim() || null;
 
       const geo = gps
         ? { lat: gps.lat, lon: gps.lon, grid_mgrs: "ATAK" }
