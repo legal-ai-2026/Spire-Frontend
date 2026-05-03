@@ -14,7 +14,7 @@ C2D2 is a three-phase decision-support system for battalion-level commanders:
 
 ## Stack
 
-- **Backend**: FastAPI 0.115 · SQLAlchemy 2 · SQLite (dev) / PostgreSQL (prod) · PyJWT · bcrypt
+- **Backend**: FastAPI 0.115 · SQLAlchemy 2 · PostgreSQL · PyJWT · bcrypt
 - **AI**: Anthropic Claude (`claude-sonnet-4-6`) · OpenAI Whisper (`whisper-1`)
 - **Frontend**: Next.js 15 · React 19 · TypeScript · Tailwind CSS · Recharts
 - **Deployment**: Docker · Azure Container Registry · Azure App Service
@@ -30,12 +30,12 @@ source venv/bin/activate
 pip install -r backend/requirements.txt
 
 cp .env.example .env
-# Edit .env — add ANTHROPIC_API_KEY and OPENAI_API_KEY
+# Edit .env — set DATABASE_URL, then add ANTHROPIC_API_KEY and OPENAI_API_KEY
 
 uvicorn backend.app.main:app --reload --port 8000
 ```
 
-The database (`c2d2.db`) is created automatically on first run. An admin account is seeded:
+PostgreSQL tables are created automatically on first run. An admin account is seeded:
 - **Email**: `admin@c2d2.local`
 - **Password**: `changeme123`
 
@@ -62,7 +62,7 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the admin cr
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `sqlite:///./c2d2.db` | SQLite for local dev; set PostgreSQL URL for prod |
+| `DATABASE_URL` | `postgresql+psycopg2://c2d2:c2d2local@localhost:5432/c2d2` | PostgreSQL database URL |
 | `ANTHROPIC_API_KEY` | — | Required for AI scoring, OCR, team rationale, adversarial sim |
 | `OPENAI_API_KEY` | — | Required for speech-to-text (Whisper) |
 | `JWT_SECRET` | `change-me-in-production` | Sign JWT tokens — change in prod |
@@ -99,6 +99,10 @@ GET    /api/v1/battlespace                     List battlespace sessions
 POST   /api/v1/battlespace                     Create session
 GET    /api/v1/battlespace/{id}                Session detail
 POST   /api/v1/battlespace/{id}/simulate-adversary  Run adversarial AI
+
+GET/POST /api/v1/system1/*                  Proxy to System 1 Ranger AI
+GET/POST /api/v1/system2/*                  Proxy to System 2 Cognitive Adapt
+GET/POST /api/v1/system3/*                  Proxy to System 3 Ops Gateway
 ```
 
 ## Docker / Production
@@ -107,7 +111,7 @@ POST   /api/v1/battlespace/{id}/simulate-adversary  Run adversarial AI
 docker compose up --build
 ```
 
-The compose file runs FastAPI on port 8000 and Next.js on port 3000 with SQLite by default. Set `DATABASE_URL` to a PostgreSQL connection string for production.
+The compose file starts PostgreSQL and runs FastAPI on port 8000 plus Next.js on port 3000.
 
 For Azure:
 

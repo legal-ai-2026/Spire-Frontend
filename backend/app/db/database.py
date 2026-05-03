@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import StaticPool
 
@@ -56,38 +56,39 @@ def init_db():
 
 
 def _migrate_add_columns(engine) -> None:
-    """Idempotently add new columns to existing tables (SQLite-safe ALTER TABLE)."""
+    """Idempotently add columns for older databases without relying on Alembic."""
+    bool_default = "BOOLEAN DEFAULT TRUE" if engine.dialect.name == "postgresql" else "BOOLEAN DEFAULT 1"
     new_cols = [
         # (table, column, ddl_type)
-        ("users",       "is_active",           "BOOLEAN DEFAULT 1"),
-        ("assessments", "eval_category",      "VARCHAR(20)"),
-        ("assessments", "steo_mission_name",   "VARCHAR(255)"),
-        ("assessments", "ldr_planning",        "FLOAT"),
-        ("assessments", "ldr_atd",             "FLOAT"),
-        ("assessments", "ldr_time_mgmt",       "FLOAT"),
-        ("assessments", "ldr_decisiveness",    "FLOAT"),
-        ("assessments", "ldr_tactics",         "FLOAT"),
-        ("assessments", "ump_planning",        "FLOAT"),
-        ("assessments", "ump_atd",             "FLOAT"),
-        ("assessments", "ump_time_mgmt",       "FLOAT"),
-        ("assessments", "ump_decisiveness",    "FLOAT"),
-        ("assessments", "ump_tactics",         "FLOAT"),
+        ("users", "is_active", bool_default),
+        ("assessments", "eval_category", "VARCHAR(20)"),
+        ("assessments", "steo_mission_name", "VARCHAR(255)"),
+        ("assessments", "ldr_planning", "FLOAT"),
+        ("assessments", "ldr_atd", "FLOAT"),
+        ("assessments", "ldr_time_mgmt", "FLOAT"),
+        ("assessments", "ldr_decisiveness", "FLOAT"),
+        ("assessments", "ldr_tactics", "FLOAT"),
+        ("assessments", "ump_planning", "FLOAT"),
+        ("assessments", "ump_atd", "FLOAT"),
+        ("assessments", "ump_time_mgmt", "FLOAT"),
+        ("assessments", "ump_decisiveness", "FLOAT"),
+        ("assessments", "ump_tactics", "FLOAT"),
         # Mission AO / weather context fields
-        ("missions", "ao_grid_center",      "VARCHAR(20)"),
-        ("missions", "ao_radius_km",        "FLOAT"),
+        ("missions", "ao_grid_center", "VARCHAR(20)"),
+        ("missions", "ao_radius_km", "FLOAT"),
         ("missions", "weather_snapshot_id", "INTEGER"),
     ]
-    with engine.connect() as conn:
-        for table, col, col_type in new_cols:
-            try:
-                conn.execute(
-                    __import__("sqlalchemy").text(
-                        f"ALTER TABLE {table} ADD COLUMN {col} {col_type}"
-                    )
-                )
-                conn.commit()
-            except Exception:
-                pass  # column already exists — ignore
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table_name, column_name, column_type in new_cols:
+            if table_name not in table_names:
+                continue
+            existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+            if column_name in existing_columns:
+                continue
+            conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {column_type}'))
 
 
 def get_db():

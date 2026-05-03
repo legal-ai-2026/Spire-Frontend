@@ -4,8 +4,9 @@ import {
   Brain, Send, CheckCircle, XCircle, AlertTriangle, Plus, Trash2,
   Loader2, ChevronDown, ChevronRight, Info, Shield,
 } from "lucide-react";
+import { system2Api } from "@/lib/system2";
 
-const S2_API = "http://127.0.0.1:8000";
+const S2_API_LABEL = "/api/v1/system2";
 
 type Confidence = "high" | "medium" | "low";
 type RiskLevel = "low" | "medium" | "high";
@@ -95,16 +96,6 @@ interface AdaptationResponse {
   approval_required: boolean;
 }
 
-async function s2Fetch<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${S2_API}${path}`, {
-    ...opts,
-    headers: { "Content-Type": "application/json", ...(opts?.headers ?? {}) },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.detail ?? `Request failed ${res.status}`);
-  return body as T;
-}
-
 function newEvidence(): EvidenceItem {
   return { id: crypto.randomUUID(), source_type: "voice_note", text: "", tags: "", soldier_ids: "", sleep_hours: "", cognitive_load: "" };
 }
@@ -159,16 +150,13 @@ export default function CognitiveAdaptPage() {
           },
         }));
       if (!evidence.length) { setError("Add at least one evidence observation with text."); setSubmitting(false); return; }
-      const result = await s2Fetch<AdaptationResponse>("/v1/adaptations", {
-        method: "POST",
-        body: JSON.stringify({
+      const result = await system2Api.createAdaptation<AdaptationResponse>({
           mission_id: missionId,
           instructor_id: instructorId,
           team_id: teamId,
           phase: phase || null,
           evidence,
           require_human_approval: true,
-        }),
       });
       setAdaptation(result);
       setApprovalResult({});
@@ -184,14 +172,11 @@ export default function CognitiveAdaptPage() {
     if (!approvalRationale.trim()) { setError("Rationale is required before approving or rejecting."); return; }
     setApproving(true); setError(null);
     try {
-      await s2Fetch(`/v1/adaptations/${adaptation.adaptation_id}/approval`, {
-        method: "POST",
-        body: JSON.stringify({
+      await system2Api.approveAdaptation(adaptation.adaptation_id, {
           recommendation_id: approvalModal.recommendation_id,
           decision,
           approver_id: instructorId,
           rationale: approvalRationale,
-        }),
       });
       setApprovalResult(prev => ({ ...prev, [approvalModal.recommendation_id]: decision }));
       setApprovalModal(null);
@@ -214,7 +199,7 @@ export default function CognitiveAdaptPage() {
           <Brain size={24} className="text-[#a371f7]" />
           <div>
             <h1 className="text-xl font-bold text-white">Cognitive Adapt</h1>
-            <p className="text-xs text-[#8b949e]">Cognitive Mission Adaptation Engine — System 2 · {S2_API}</p>
+            <p className="text-xs text-[#8b949e]">Cognitive Mission Adaptation Engine — System 2 · {S2_API_LABEL}</p>
           </div>
           {adaptation && (
             <div className="ml-auto flex items-center gap-2 text-xs">

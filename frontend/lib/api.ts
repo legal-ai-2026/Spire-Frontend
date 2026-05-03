@@ -1,7 +1,7 @@
 import { getToken } from "./auth";
 import { enqueue } from "./offlineQueue";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export class OfflineError extends Error {
   constructor() {
@@ -66,7 +66,7 @@ export async function apiFetch<T = unknown>(
     delete headers["Content-Type"];
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     let detail = res.statusText;
     try {

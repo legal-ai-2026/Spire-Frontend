@@ -28,7 +28,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://c2d2:c2d2local@postgres:5432/c2d2
+      DATABASE_URL: postgresql+psycopg2://c2d2:c2d2local@postgres:5432/c2d2
       JWT_SECRET: local-dev-secret
       DEBUG: "true"
       CORS_ORIGINS: http://localhost:3000

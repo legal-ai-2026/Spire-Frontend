@@ -4,8 +4,9 @@ import {
   Network, Send, CheckCircle, XCircle, AlertTriangle, Loader2,
   ChevronDown, ChevronRight, Shield, BookOpen, Map, MessageSquare, Flag,
 } from "lucide-react";
+import { system3Api } from "@/lib/system3";
 
-const S3_API = "http://127.0.0.1:8000";
+const S3_API_LABEL = "/api/v1/system3";
 
 type ClassificationMarking = "UNCLASSIFIED" | "CUI" | "FOUO";
 type ApprovalDecision = "Approve" | "Reject";
@@ -57,16 +58,6 @@ interface LessonLearned {
 
 type Tab = "mission" | "evidence" | "coa" | "lessons";
 
-async function s3Fetch<T>(path: string, apiKey: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${S3_API}${path}`, {
-    ...opts,
-    headers: { "Content-Type": "application/json", "X-API-Key": apiKey, ...(opts?.headers ?? {}) },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.detail ?? `Request failed ${res.status}`);
-  return body as T;
-}
-
 const METRIC_LABELS: Record<string, string> = {
   FatigueLoad: "Fatigue Load", CommunicationDegradation: "Comm Degradation",
   SituationalConfusion: "Situational Confusion", LeadershipStress: "Leadership Stress",
@@ -94,7 +85,6 @@ function ClassBadge({ marking }: { marking?: ClassificationMarking }) {
 }
 
 export default function OpsGatewayPage() {
-  const [apiKey, setApiKey]         = useState("");
   const [missionId, setMissionId]   = useState("mission-compound-iron");
   const [activeTab, setActiveTab]   = useState<Tab>("mission");
   const [loading, setLoading]       = useState(false);
@@ -130,10 +120,10 @@ export default function OpsGatewayPage() {
     setLoading(true); setError(null); setNoState(false);
     setMissionContext(null); setMissionState(null);
     try {
-      const ctx = await s3Fetch<MissionContext>(`/v1/mission-context/${missionId}`, apiKey);
+      const ctx = await system3Api.getMissionContext<MissionContext>(missionId);
       setMissionContext(ctx);
       try {
-        const st = await s3Fetch<MissionStateEstimate>(`/v1/mission-state/${missionId}`, apiKey);
+        const st = await system3Api.getMissionState<MissionStateEstimate>(missionId);
         setMissionState(st);
       } catch {
         setNoState(true);
@@ -149,9 +139,13 @@ export default function OpsGatewayPage() {
     if (!evidenceText.trim()) { setError("Evidence text is required."); return; }
     setLoading(true); setError(null);
     try {
-      const res = await s3Fetch<EvidenceIngestResponse>("/v1/evidence/ingest", apiKey, {
-        method: "POST",
-        body: JSON.stringify({ missionId, reportedBy, sourceType, evidenceText, classificationMarking: classification, sourceRefs: [] }),
+      const res = await system3Api.ingestEvidence<EvidenceIngestResponse>({
+        missionId,
+        reportedBy,
+        sourceType,
+        evidenceText,
+        classificationMarking: classification,
+        sourceRefs: [],
       });
       setIngestResponse(res);
       setMissionState(res.stateEstimate);
@@ -167,9 +161,11 @@ export default function OpsGatewayPage() {
     if (!justification.trim()) { setError("Justification is required."); return; }
     setApprovingId(rec.recommendationId);
     try {
-      await s3Fetch(`/v1/scenario-injects/${rec.recommendationId}/approval`, apiKey, {
-        method: "POST",
-        body: JSON.stringify({ recommendationId: rec.recommendationId, reviewedBy: reportedBy, decision, justification }),
+      await system3Api.approveScenarioInject(rec.recommendationId, {
+        recommendationId: rec.recommendationId,
+        reviewedBy: reportedBy,
+        decision,
+        justification,
       });
       setApprovalState(prev => ({ ...prev, [rec.recommendationId]: decision === "Approve" ? "Approved" : "Rejected" }));
       if (decision === "Approve") setCaptureId(rec.recommendationId);
@@ -184,9 +180,11 @@ export default function OpsGatewayPage() {
   async function handleProposeCOA() {
     setLoading(true); setError(null);
     try {
-      const res = await s3Fetch<COAProposal>("/v1/coa/propose", apiKey, {
-        method: "POST",
-        body: JSON.stringify({ missionId, requestedBy: reportedBy, includeRehearsalScenarios: true, sourceRefs: [] }),
+      const res = await system3Api.proposeCoas<COAProposal>({
+        missionId,
+        requestedBy: reportedBy,
+        includeRehearsalScenarios: true,
+        sourceRefs: [],
       });
       setCoaProposal(res); setCoaDecisions({});
     } catch (e: unknown) {
@@ -201,10 +199,7 @@ export default function OpsGatewayPage() {
     if (!coaProposal) return;
     setCoaApproving(coaId);
     try {
-      await s3Fetch(`/v1/coa/proposals/${coaProposal.runId}/approval`, apiKey, {
-        method: "POST",
-        body: JSON.stringify({ coaId, reviewedBy: reportedBy, decision, justification: coaJust }),
-      });
+      await system3Api.approveCoa(coaProposal.runId, { coaId, reviewedBy: reportedBy, decision, justification: coaJust });
       setCoaDecisions(prev => ({ ...prev, [coaId]: decision }));
       setCoaModal(null); setCoaJust("");
     } catch (e: unknown) {
@@ -219,9 +214,12 @@ export default function OpsGatewayPage() {
     if (!captureId) { setError("Approve a scenario inject first to capture a lesson."); return; }
     setLoading(true); setError(null);
     try {
-      const res = await s3Fetch<{ lesson: LessonLearned }>("/v1/lessons-learned/capture", apiKey, {
-        method: "POST",
-        body: JSON.stringify({ missionId, approvedInjectId: captureId, recordedBy: reportedBy, aarNote, classificationMarking: classification }),
+      const res = await system3Api.captureLesson<{ lesson: LessonLearned }>({
+        missionId,
+        approvedInjectId: captureId,
+        recordedBy: reportedBy,
+        aarNote,
+        classificationMarking: classification,
       });
       setLesson(res.lesson);
     } catch (e: unknown) {
@@ -246,7 +244,7 @@ export default function OpsGatewayPage() {
           <Network size={24} className="text-[#f59e0b]" />
           <div>
             <h1 className="text-xl font-bold text-white">Ops Gateway</h1>
-            <p className="text-xs text-[#8b949e]">Operations Console — System 3 · {S3_API}</p>
+            <p className="text-xs text-[#8b949e]">Operations Console — System 3 · {S3_API_LABEL}</p>
           </div>
         </div>
 
@@ -258,9 +256,10 @@ export default function OpsGatewayPage() {
               className="mt-1 w-full bg-[#0d1117] border border-[#30363d] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#f59e0b]" />
           </div>
           <div className="flex-1 min-w-48">
-            <label className="text-[10px] text-[#8b949e] uppercase tracking-wider">API Key</label>
-            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="X-API-Key"
-              className="mt-1 w-full bg-[#0d1117] border border-[#30363d] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#f59e0b] placeholder-[#6e7681]" />
+            <div className="text-[10px] text-[#8b949e] uppercase tracking-wider">Auth Path</div>
+            <div className="mt-1 rounded border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#8b949e]">
+              API key injected server-side
+            </div>
           </div>
           <button onClick={loadMission} disabled={loading}
             className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 disabled:opacity-50 text-[#0d1117] font-bold text-xs px-4 py-1.5 rounded transition-colors flex items-center gap-2">

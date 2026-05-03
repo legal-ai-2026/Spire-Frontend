@@ -23,8 +23,12 @@ class Settings:
     version: str = "0.1.0"
     debug: bool = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes")
 
-    # Database — defaults to local SQLite for dev; swap in Postgres URL for production
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./c2d2.db")
+    # Database — PostgreSQL is the runtime default. Set DATABASE_URL explicitly
+    # for every shared deployment; SQLite is only supported for isolated dev.
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg2://c2d2:c2d2local@localhost:5432/c2d2",
+    )
 
     # JWT
     jwt_secret: str = os.getenv("JWT_SECRET", "change-me-in-production-please")
@@ -50,6 +54,36 @@ class Settings:
     azure_blob_connection_string: str = os.getenv("AZURE_BLOB_CONNECTION_STRING", "")
     azure_blob_container: str = os.getenv("AZURE_BLOB_CONTAINER", "c2d2-media")
     data_local_dir: str = os.getenv("DATA_LOCAL_DIR", "data_local")
+
+    # System 1 Ranger AI proxy. Prefer the in-cluster Service DNS when present.
+    system1_base_url: str = (
+        os.getenv("SYSTEM1_INTERNAL_BASE_URL")
+        or os.getenv("SYSTEM1_BASE_URL")
+        or os.getenv("S1_BASE_URL")
+        or "http://127.0.0.1:8001"
+    )
+    system_api_key: str = os.getenv("SYSTEM_API_KEY", "")
+    system1_api_key: str = os.getenv("SYSTEM1_API_KEY", "") or system_api_key
+    system1_timeout_seconds: float = float(os.getenv("SYSTEM1_TIMEOUT_SECONDS", "60"))
+
+    system2_base_url: str = (
+        os.getenv("SYSTEM2_INTERNAL_BASE_URL")
+        or os.getenv("SYSTEM2_BASE_URL")
+        or os.getenv("S2_BASE_URL")
+        or "http://127.0.0.1:8000"
+    )
+    system2_api_key: str = os.getenv("SYSTEM2_API_KEY", "") or system_api_key
+    system2_admin_api_key: str = os.getenv("SYSTEM2_ADMIN_API_KEY", "")
+    system2_timeout_seconds: float = float(os.getenv("SYSTEM2_TIMEOUT_SECONDS", "60"))
+
+    system3_base_url: str = (
+        os.getenv("SYSTEM3_INTERNAL_BASE_URL")
+        or os.getenv("SYSTEM3_BASE_URL")
+        or os.getenv("S3_BASE_URL")
+        or "http://127.0.0.1:8000"
+    )
+    system3_api_key: str = os.getenv("SYSTEM3_API_KEY", "") or system_api_key
+    system3_timeout_seconds: float = float(os.getenv("SYSTEM3_TIMEOUT_SECONDS", "60"))
 
     @property
     def cors_origins_list(self) -> list[str]:

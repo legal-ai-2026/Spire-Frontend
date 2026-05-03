@@ -5,47 +5,20 @@ import {
   FileText, Loader2, Mic, Upload, XCircle,
 } from "lucide-react";
 import { api, OfflineError } from "@/lib/api";
+import { system1Api } from "@/lib/system1";
 import { AtakDevicePanel, type GpsCoords } from "@/components/AtakDevicePanel";
 import type { Assessment, Soldier, TrainingEvent } from "@/types";
+import type {
+  System1Observation as S1Observation,
+  System1PolicyDecision as S1Policy,
+  System1RecommendationRecord as S1RecordItem,
+  System1RunRecord as S1Run,
+  System1RunStatus as S1Status,
+  System1ScenarioRecommendation as S1Recommendation,
+} from "@/types/system1";
 
-const S1_API = "/s1";
 const S1_PHASES = ["Benning", "Mountain", "Florida"] as const;
 const S1_TERMINAL = new Set(["pending_approval", "completed", "failed"]);
-
-type S1Status = "accepted" | "processing" | "pending_approval" | "completed" | "failed";
-
-interface S1Observation {
-  observation_id: string;
-  soldier_id?: string;
-  task_code?: string;
-  note?: string;
-  rating: "GO" | "NOGO" | "UNCERTAIN";
-  source?: string;
-}
-interface S1Policy { allowed: boolean; reasons: string[]; }
-interface S1Recommendation {
-  recommendation_id: string;
-  target_soldier_id?: string;
-  rationale: string;
-  development_edge?: string;
-  learning_objective?: string;
-  proposed_modification?: string;
-  risk_level?: string;
-  safety_checks?: string[];
-  doctrine_refs?: string[];
-}
-interface S1RecordItem {
-  recommendation: S1Recommendation;
-  policy: S1Policy;
-  status: "pending" | "approved" | "rejected" | "blocked";
-}
-interface S1Run {
-  run_id: string;
-  status: S1Status;
-  observations?: S1Observation[];
-  recommendations?: S1RecordItem[];
-  errors?: string[];
-}
 
 function toBase64(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -368,10 +341,9 @@ export default function AssessPage() {
 
   async function fetchRangerRun(runId: string) {
     try {
-      const res = await fetch(`${S1_API}/v1/runs/${runId}`);
-      const body: S1Run = await res.json();
-      setRangerRun(body);
-      if (S1_TERMINAL.has(body.status)) stopRangerPoll();
+      const { data } = await system1Api.getRun(runId);
+      setRangerRun(data);
+      if (S1_TERMINAL.has(data.status)) stopRangerPoll();
     } catch {
       // silently ignore transient poll errors
     }
@@ -398,28 +370,22 @@ export default function AssessPage() {
         ? { lat: gps.lat, lon: gps.lon, grid_mgrs: "ATAK" }
         : { lat: 0, lon: 0, grid_mgrs: "00A" };
 
-      const res = await fetch(`${S1_API}/v1/ingest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instructor_id: rangerInstructor,
-          platoon_id: rangerPlatoon,
-          mission_id: rangerMission,
-          phase: rangerPhase,
-          timestamp_utc: new Date().toISOString(),
-          geo,
-          free_text,
-          audio_b64,
-          image_b64,
-        }),
+      const { data } = await system1Api.ingest({
+        instructor_id: rangerInstructor,
+        platoon_id: rangerPlatoon,
+        mission_id: rangerMission,
+        phase: rangerPhase,
+        timestamp_utc: new Date().toISOString(),
+        geo,
+        free_text,
+        audio_b64,
+        image_b64,
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.detail ?? `Ranger AI error ${res.status}`);
 
-      const runId: string = body.run_id;
-      setRangerRun(body as S1Run);
+      const runId: string = data.run_id;
+      setRangerRun(data);
 
-      if (!S1_TERMINAL.has(body.status as S1Status)) {
+      if (!S1_TERMINAL.has(data.status as S1Status)) {
         setRangerPolling(true);
         rangerPollRef.current = setInterval(() => fetchRangerRun(runId), 2000);
       }
@@ -432,15 +398,7 @@ export default function AssessPage() {
     if (!rangerRun) return;
     setDecidingRec(recId);
     try {
-      const res = await fetch(`${S1_API}/v1/recommendations/${recId}/decision`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision }),
-      });
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b?.detail ?? `Decision failed ${res.status}`);
-      }
+      await system1Api.decide(recId, { decision });
       await fetchRangerRun(rangerRun.run_id);
     } catch (err: unknown) {
       setRangerError(err instanceof Error ? err.message : "Decision failed");

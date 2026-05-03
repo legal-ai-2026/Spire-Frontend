@@ -1,0 +1,162 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: c2d2-fe-config
+  namespace: staging
+data:
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  PORT: "8080"
+  BACKEND_PORT: "8000"
+  FRONTEND_PORT: "3000"
+  CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+  API_INTERNAL_BASE_URL: "http://127.0.0.1:8000"
+  NEXT_PUBLIC_API_URL: ""
+  SYSTEM1_INTERNAL_BASE_URL: "http://c2d2-avai.staging.svc.cluster.local"
+  SYSTEM1_TIMEOUT_SECONDS: "120"
+  SYSTEM2_INTERNAL_BASE_URL: "http://192.168.0.253"
+  SYSTEM2_TIMEOUT_SECONDS: "120"
+  SYSTEM3_INTERNAL_BASE_URL: "http://192.168.0.254"
+  SYSTEM3_TIMEOUT_SECONDS: "120"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c2d2-fe
+  namespace: staging
+  labels:
+    app: c2d2-fe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c2d2-fe
+  template:
+    metadata:
+      labels:
+        app: c2d2-fe
+    spec:
+      containers:
+        - name: c2d2-fe
+          image: 192.168.0.247:5000/c2d2-fe:IMAGE_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: c2d2-fe-config
+            - secretRef:
+                name: c2d2-fe-secrets
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: JWT_SECRET
+            - name: DEFAULT_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: DEFAULT_ADMIN_EMAIL
+                  optional: true
+            - name: DEFAULT_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: DEFAULT_ADMIN_PASSWORD
+                  optional: true
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: DATABASE_URL
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: SYSTEM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: SYSTEM_API_KEY
+                  optional: true
+            - name: SYSTEM1_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: SYSTEM1_API_KEY
+                  optional: true
+            - name: SYSTEM2_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: SYSTEM2_API_KEY
+                  optional: true
+            - name: SYSTEM2_ADMIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: SYSTEM2_ADMIN_API_KEY
+                  optional: true
+            - name: SYSTEM3_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: c2d2-fe-secrets
+                  key: SYSTEM3_API_KEY
+                  optional: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: c2d2-fe
+  namespace: staging
+  labels:
+    app: c2d2-fe
+spec:
+  type: LoadBalancer
+  # The documented MetalLB range is currently fully assigned once System 2
+  # uses 192.168.0.253 and System 3 uses 192.168.0.254. Add loadBalancerIP
+  # after expanding the pool or freeing a LAN address.
+  selector:
+    app: c2d2-fe
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
