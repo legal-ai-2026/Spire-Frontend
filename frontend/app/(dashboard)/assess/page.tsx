@@ -243,8 +243,7 @@ export default function AssessPage() {
     setGps(coords);
   }, []);
 
-  async function handleQuickCreateEvent(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleQuickCreateEvent() {
     setNewEventSaving(true);
     try {
       const created = await api.post<TrainingEvent>("/api/v1/events", {
@@ -561,15 +560,13 @@ export default function AssessPage() {
                 </button>
               </div>
               {showNewEvent && (
-                <form
-                  onSubmit={handleQuickCreateEvent}
-                  className="mt-2 p-3 bg-[#0d1117] border border-[#30363d] rounded space-y-2"
-                >
+                <div className="mt-2 p-3 bg-[#0d1117] border border-[#30363d] rounded space-y-2">
                   <input
                     required
                     autoFocus
                     value={newEventName}
                     onChange={e => setNewEventName(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleQuickCreateEvent(); } }}
                     placeholder="Event name"
                     className="w-full px-2.5 py-1.5 bg-[#161b22] border border-[#30363d] rounded text-sm text-white focus:outline-none focus:border-[#3fb950]"
                   />
@@ -584,7 +581,8 @@ export default function AssessPage() {
                   </select>
                   <div className="flex gap-1.5">
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleQuickCreateEvent}
                       disabled={newEventSaving}
                       className="flex-1 py-1.5 bg-[#3fb950] hover:bg-green-600 disabled:opacity-50 text-black text-xs font-semibold rounded transition-colors"
                     >
@@ -598,7 +596,7 @@ export default function AssessPage() {
                       Cancel
                     </button>
                   </div>
-                </form>
+                </div>
               )}
             </div>
           </div>

@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import {
   Activity, BarChart2, Bot, Brain, CalendarCheck, CalendarDays, Crosshair, Database,
-  LayoutDashboard, LogOut, Menu, Network, Shield, Target, Users, X,
+  LayoutDashboard, LogOut, Network, Shield, Target, Users,
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
 
@@ -37,126 +37,81 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router   = useRouter();
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function handleLogout() {
     logout();
     router.push("/login");
   }
 
-  function closeSidebar() {
-    setSidebarOpen(false);
-  }
-
-  const sidebarContent = (
-    <>
-      {/* Logo */}
-      <div className="px-4 py-5 border-b border-[#30363d] flex items-center justify-between">
-        <div>
-          <div className="text-xl font-black text-white tracking-tight">C2D2</div>
-          <div className="text-[10px] text-[#8b949e] uppercase tracking-widest mt-0.5">
-            Combat Decision Dominance
-          </div>
-        </div>
-        <button
-          onClick={closeSidebar}
-          className="md:hidden p-1 text-[#8b949e] hover:text-white transition-colors"
-          aria-label="Close menu"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon, phase, group }, idx) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          const prevGroup = idx > 0 ? NAV[idx - 1].group : null;
-          const showDivider = group !== null && group !== prevGroup && idx > 0;
-          return (
-            <div key={href}>
-              {showDivider && (
-                <div className="mx-3 my-2 border-t border-[#21262d]" />
-              )}
-              <Link
-                href={href}
-                onClick={closeSidebar}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  active
-                    ? "bg-[#21262d] text-white"
-                    : "text-[#8b949e] hover:text-white hover:bg-[#21262d]"
-                }`}
-              >
-                <Icon size={16} />
-                <span className="flex-1 leading-tight">{label}</span>
-                {phase && (
-                  <span className={`text-[10px] font-bold ${PHASE_COLORS[phase] ?? ""}`}>
-                    P{phase}
-                  </span>
-                )}
-              </Link>
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* User */}
-      {user && (
-        <div className="px-4 py-3 border-t border-[#30363d]">
-          <div className="text-xs text-[#8b949e] truncate">{user.full_name ?? user.email}</div>
-          <div className="text-[10px] text-[#3fb950] uppercase mt-0.5">{user.role}</div>
-          <button
-            onClick={handleLogout}
-            className="mt-2 flex items-center gap-1.5 text-[11px] text-[#8b949e] hover:text-[#f85149] transition-colors"
-          >
-            <LogOut size={12} /> Sign out
-          </button>
-        </div>
-      )}
-    </>
-  );
-
   return (
     <div className="flex h-screen overflow-hidden bg-[#0d1117]">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/60 md:hidden"
-          onClick={closeSidebar}
-        />
-      )}
-
-      {/* Sidebar — drawer on mobile, static on desktop */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-30 w-64 flex flex-col bg-[#161b22] border-r border-[#30363d]
-          transform transition-transform duration-200 ease-in-out
-          md:static md:w-56 md:translate-x-0 md:flex-shrink-0
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
-        {sidebarContent}
-      </aside>
-
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile top bar */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-[#161b22] border-b border-[#30363d] flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1 text-[#8b949e] hover:text-white transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
-          <span className="text-sm font-black text-white tracking-tight">C2D2</span>
+      {/* Sidebar — icon-only on mobile, full on md+ */}
+      <aside className="flex-shrink-0 flex flex-col bg-[#161b22] border-r border-[#30363d] w-14 md:w-56 overflow-y-auto">
+        {/* Logo */}
+        <div className="px-0 md:px-4 py-4 md:py-5 border-b border-[#30363d] flex items-center justify-center md:justify-start">
+          <div className="text-base md:text-xl font-black text-white tracking-tight">C2</div>
+          <div className="hidden md:block">
+            <span className="text-xl font-black text-white tracking-tight">D2</span>
+            <div className="text-[10px] text-[#8b949e] uppercase tracking-widest mt-0.5">
+              Combat Decision Dominance
+            </div>
+          </div>
         </div>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
+        {/* Navigation */}
+        <nav className="flex-1 px-1 md:px-2 py-4">
+          {NAV.map(({ href, label, icon: Icon, phase, group }, idx) => {
+            const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+            const prevGroup = idx > 0 ? NAV[idx - 1].group : null;
+            const showDivider = group !== null && group !== prevGroup && idx > 0;
+            return (
+              <div key={href}>
+                {showDivider && (
+                  <div className="mx-2 my-2 border-t border-[#21262d]" />
+                )}
+                <Link
+                  href={href}
+                  title={label}
+                  className={`flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2 rounded-md text-sm transition-colors ${
+                    active
+                      ? "bg-[#21262d] text-white"
+                      : "text-[#8b949e] hover:text-white hover:bg-[#21262d]"
+                  }`}
+                >
+                  <Icon size={18} className="flex-shrink-0" />
+                  <span className="hidden md:block flex-1 leading-tight">{label}</span>
+                  {phase && (
+                    <span className={`hidden md:block text-[10px] font-bold ${PHASE_COLORS[phase] ?? ""}`}>
+                      P{phase}
+                    </span>
+                  )}
+                </Link>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* User */}
+        {user && (
+          <div className="px-1 md:px-4 py-3 border-t border-[#30363d] flex flex-col items-center md:items-start">
+            <div className="hidden md:block text-xs text-[#8b949e] truncate w-full">{user.full_name ?? user.email}</div>
+            <div className="hidden md:block text-[10px] text-[#3fb950] uppercase mt-0.5">{user.role}</div>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="mt-1 md:mt-2 flex items-center gap-1.5 text-[11px] text-[#8b949e] hover:text-[#f85149] transition-colors"
+            >
+              <LogOut size={14} />
+              <span className="hidden md:inline">Sign out</span>
+            </button>
+          </div>
+        )}
+      </aside>
+
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto min-w-0">
+        {children}
+      </main>
     </div>
   );
 }
