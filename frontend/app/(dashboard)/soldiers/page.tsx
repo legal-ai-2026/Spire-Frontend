@@ -62,7 +62,7 @@ export default function SoldiersPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -81,7 +81,7 @@ export default function SoldiersPage() {
       {showAdd && (
         <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-5">
           <h2 className="text-sm font-semibold text-white mb-4">New Soldier</h2>
-          <form onSubmit={handleAdd} className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { id: "service_number", label: "Service #", required: true },
               { id: "name", label: "Name", required: true },

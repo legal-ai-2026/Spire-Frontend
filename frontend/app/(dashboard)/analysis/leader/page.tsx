@@ -50,7 +50,7 @@ export default function LeaderAnalysisPage() {
   const hasUmpData    = data && Object.keys(data.ump_averages).length > 0;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-6 max-w-5xl">
       <div>
         <h1 className="text-xl font-black text-white">Individual Performance Analysis</h1>
         <p className="text-[#8b949e] text-xs mt-0.5">Phase 01 — Leader Evaluation · Unit Mission Proficiency · ST&EO</p>

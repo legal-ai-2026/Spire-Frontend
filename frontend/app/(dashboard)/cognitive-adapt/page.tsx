@@ -226,7 +226,7 @@ export default function CognitiveAdaptPage() {
                 <Send size={14} className="text-[#a371f7]" /> Evidence Ingest
               </h2>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] text-[#8b949e] uppercase tracking-wider">Mission ID</label>
                     <input value={missionId} onChange={e => setMissionId(e.target.value)}
@@ -238,7 +238,7 @@ export default function CognitiveAdaptPage() {
                       className="mt-1 w-full bg-[#0d1117] border border-[#30363d] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#a371f7]" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] text-[#8b949e] uppercase tracking-wider">Instructor ID</label>
                     <input value={instructorId} onChange={e => setInstructorId(e.target.value)}
@@ -276,13 +276,13 @@ export default function CognitiveAdaptPage() {
                         <textarea value={ev.text} onChange={e => updateEvidence(ev.id, "text", e.target.value)} rows={2}
                           placeholder="Observation text…"
                           className="w-full bg-[#161b22] border border-[#30363d] rounded px-2 py-1 text-xs text-white resize-none focus:outline-none focus:border-[#a371f7] placeholder-[#6e7681]" />
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input value={ev.tags} onChange={e => updateEvidence(ev.id, "tags", e.target.value)}
                             placeholder="tags (comma sep)" className="bg-[#161b22] border border-[#30363d] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#a371f7] placeholder-[#6e7681]" />
                           <input value={ev.soldier_ids} onChange={e => updateEvidence(ev.id, "soldier_ids", e.target.value)}
                             placeholder="soldier IDs" className="bg-[#161b22] border border-[#30363d] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#a371f7] placeholder-[#6e7681]" />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input type="number" value={ev.sleep_hours} onChange={e => updateEvidence(ev.id, "sleep_hours", e.target.value)}
                             placeholder="sleep hrs" className="bg-[#161b22] border border-[#30363d] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#a371f7] placeholder-[#6e7681]" />
                           <input type="number" min="0" max="1" step="0.1" value={ev.cognitive_load} onChange={e => updateEvidence(ev.id, "cognitive_load", e.target.value)}
@@ -397,7 +397,7 @@ export default function CognitiveAdaptPage() {
 
                             {open && (
                               <div className="px-4 pb-4 space-y-3 border-t border-[#21262d] text-xs">
-                                <div className="pt-3 grid grid-cols-3 gap-2">
+                                <div className="pt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                   {[
                                     { label: "Safety Risk", value: rec.safety_risk, color: "#f85149" },
                                     { label: "Fatigue Risk", value: rec.fatigue_risk, color: "#f59e0b" },

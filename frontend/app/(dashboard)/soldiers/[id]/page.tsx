@@ -156,7 +156,7 @@ export default function SoldierDetailPage() {
     }));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Back + Header */}
       <div>
         <button onClick={() => router.back()} className="flex items-center gap-1 text-xs text-[#8b949e] hover:text-white mb-3">

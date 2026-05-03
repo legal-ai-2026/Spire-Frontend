@@ -43,7 +43,7 @@ export default function UnitAnalysisPage() {
   }, [unit]);
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
       <div>
         <h1 className="text-xl font-black text-white">Unit Collective Analysis</h1>
         <p className="text-[#8b949e] text-xs mt-0.5">Phase 01 — Unit Performance · Leader Comparison · ST&EO Proficiency</p>

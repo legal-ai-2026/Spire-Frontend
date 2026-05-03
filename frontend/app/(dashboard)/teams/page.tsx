@@ -196,7 +196,7 @@ export default function TeamsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black text-white">Team Builder</h1>
@@ -214,7 +214,7 @@ export default function TeamsPage() {
       {showNew && (
         <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Create Mission</h2>
-          <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="block text-[10px] text-[#8b949e] uppercase tracking-wider mb-1">Mission Name *</label>
               <input required value={form.mission_name}
@@ -365,7 +365,7 @@ export default function TeamsPage() {
                         "{comp.rationale}"
                       </p>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {comp.members.map(m => {
                           const isLeadRole = ["PL","PSG","SL1","SL2","SL3","WSL"].includes(m.role);
                           const isCommand  = m.role === "PL" || m.role === "PSG";

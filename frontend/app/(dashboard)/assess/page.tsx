@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle, Bot, Camera, CheckCircle, ChevronDown, ChevronRight,
-  FileText, Loader2, Mic, Upload, XCircle,
+  FileText, Loader2, Mic, Plus, Upload, XCircle,
 } from "lucide-react";
 import { api, OfflineError } from "@/lib/api";
 import { system1Api } from "@/lib/system1";
@@ -160,6 +160,10 @@ export default function AssessPage() {
   const [events, setEvents]     = useState<TrainingEvent[]>([]);
   const [soldierIdStr, setSoldierIdStr] = useState("");
   const [eventIdStr, setEventIdStr]     = useState("");
+  const [showNewEvent, setShowNewEvent] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventType, setNewEventType] = useState("Field Exercise");
+  const [newEventSaving, setNewEventSaving] = useState(false);
   const [notes, setNotes]   = useState("");
   const [file, setFile]     = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -238,6 +242,24 @@ export default function AssessPage() {
   const handleGps = useCallback((coords: GpsCoords | null) => {
     setGps(coords);
   }, []);
+
+  async function handleQuickCreateEvent(e: React.FormEvent) {
+    e.preventDefault();
+    setNewEventSaving(true);
+    try {
+      const created = await api.post<TrainingEvent>("/api/v1/events", {
+        event_name: newEventName,
+        event_type: newEventType,
+      });
+      setEvents(prev => [...prev, created]);
+      setEventIdStr(String(created.id));
+      setShowNewEvent(false);
+      setNewEventName("");
+      setNewEventType("Field Exercise");
+    } finally {
+      setNewEventSaving(false);
+    }
+  }
 
   const ratings = ratingsMap[evalCategory];
 
@@ -518,16 +540,66 @@ export default function AssessPage() {
             </div>
             <div>
               <label className="block text-[10px] text-[#8b949e] uppercase tracking-wider mb-1">Training Event</label>
-              <select
-                value={eventIdStr}
-                onChange={e => setEventIdStr(e.target.value)}
-                className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded text-sm text-white focus:outline-none focus:border-[#3fb950]"
-              >
-                <option value="">None</option>
-                {events.map(ev => (
-                  <option key={ev.id} value={String(ev.id)}>{ev.event_name}</option>
-                ))}
-              </select>
+              <div className="flex gap-1.5">
+                <select
+                  value={eventIdStr}
+                  onChange={e => setEventIdStr(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded text-sm text-white focus:outline-none focus:border-[#3fb950]"
+                >
+                  <option value="">None</option>
+                  {events.map(ev => (
+                    <option key={ev.id} value={String(ev.id)}>{ev.event_name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowNewEvent(v => !v)}
+                  title="Create new training event"
+                  className="px-2 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#8b949e] hover:text-white transition-colors"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              {showNewEvent && (
+                <form
+                  onSubmit={handleQuickCreateEvent}
+                  className="mt-2 p-3 bg-[#0d1117] border border-[#30363d] rounded space-y-2"
+                >
+                  <input
+                    required
+                    autoFocus
+                    value={newEventName}
+                    onChange={e => setNewEventName(e.target.value)}
+                    placeholder="Event name"
+                    className="w-full px-2.5 py-1.5 bg-[#161b22] border border-[#30363d] rounded text-sm text-white focus:outline-none focus:border-[#3fb950]"
+                  />
+                  <select
+                    value={newEventType}
+                    onChange={e => setNewEventType(e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-[#161b22] border border-[#30363d] rounded text-sm text-white focus:outline-none focus:border-[#3fb950]"
+                  >
+                    {["Field Exercise","Live Fire","JRTC","NTC","Rotation","Evaluation","Other"].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="submit"
+                      disabled={newEventSaving}
+                      className="flex-1 py-1.5 bg-[#3fb950] hover:bg-green-600 disabled:opacity-50 text-black text-xs font-semibold rounded transition-colors"
+                    >
+                      {newEventSaving ? "Saving…" : "Create"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNewEvent(false); setNewEventName(""); }}
+                      className="flex-1 py-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] text-xs rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
           {/* GPS tag indicator */}

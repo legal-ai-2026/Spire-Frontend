@@ -755,7 +755,7 @@ export default function RangerTrainingPage() {
         <aside className="border-b border-[#30363d] bg-[#161b22] p-4 xl:min-h-[calc(100vh-73px)] xl:border-b-0 xl:border-r">
           <PanelTitle icon={FileText} title="Evidence Ingest" />
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label className="block text-xs text-[#8b949e]">
                 Instructor ID
                 <input
@@ -783,7 +783,7 @@ export default function RangerTrainingPage() {
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label className="block text-xs text-[#8b949e]">
                 Phase
                 <select
@@ -835,7 +835,7 @@ export default function RangerTrainingPage() {
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label className="flex min-h-16 cursor-pointer items-center gap-2 rounded-md border border-dashed border-[#30363d] bg-[#0d1117] px-2 py-2 text-xs text-[#8b949e] hover:border-[#58a6ff]">
                 <Mic size={14} />
                 <input

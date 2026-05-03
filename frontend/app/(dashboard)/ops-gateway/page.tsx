@@ -340,7 +340,7 @@ export default function OpsGatewayPage() {
                           <span className="text-[#8b949e] w-8 text-right">{(m.score * 100).toFixed(0)}%</span>
                           {open ? <ChevronDown size={10} className="text-[#8b949e]" /> : <ChevronRight size={10} className="text-[#8b949e]" />}
                         </button>
-                        <div className="grid grid-cols-2 gap-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           <div>
                             <div className="text-[9px] text-[#6e7681] mb-0.5">Risk/Burden</div>
                             <ScoreBar value={m.score} color={m.score > 0.6 ? "#f85149" : m.score > 0.3 ? "#f59e0b" : "#3fb950"} />
@@ -447,7 +447,7 @@ export default function OpsGatewayPage() {
                                 <p className="text-sm font-semibold text-white">{rec.title}</p>
                                 <p className="text-xs text-[#8b949e] mt-1">{rec.summary}</p>
                                 <p className="text-xs text-[#58a6ff] mt-1">Objective: {rec.trainingObjective}</p>
-                                <div className="mt-3 grid grid-cols-2 gap-2">
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   <div>
                                     <div className="text-[9px] text-[#6e7681] mb-0.5">Learning Value</div>
                                     <ScoreBar value={rec.expectedLearningValue} color="#3fb950" />

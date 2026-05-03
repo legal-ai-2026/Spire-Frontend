@@ -263,7 +263,7 @@ export default function BattlespacePage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -312,7 +312,7 @@ export default function BattlespacePage() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] text-[#3fb950] uppercase tracking-wider mb-1">Friendly Callsign</label>
                 <input value={form.friendly_callsign}
@@ -367,7 +367,7 @@ export default function BattlespacePage() {
             <h2 className="text-sm font-semibold text-white">Force Status</h2>
             <span className="ml-auto text-[10px] text-[#6e7681]">{forceStatus.kpis.total} soldiers</span>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
             {[
               { label: "Available",  count: forceStatus.kpis.available,  color: "text-[#3fb950]" },
               { label: "On Mission", count: forceStatus.kpis.on_mission,  color: "text-[#58a6ff]" },
@@ -506,7 +506,7 @@ export default function BattlespacePage() {
                   );
                 })()}
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="bg-[#0d1117] rounded-md p-3">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Shield size={12} className="text-[#3fb950]" />

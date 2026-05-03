@@ -46,14 +46,14 @@ export default function BattalionOverviewPage() {
   }));
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
       <div>
         <h1 className="text-xl font-black text-white">Battalion Performance Overview</h1>
         <p className="text-[#8b949e] text-xs mt-0.5">Phase 01 — Cross-Unit Analysis · Battalion-Wide Metrics</p>
       </div>
 
       {/* KPI tiles */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total Soldiers",  value: data.total_soldiers,  color: "#3fb950" },
           { label: "Total Evals",     value: data.total_evals,     color: "#f59e0b" },

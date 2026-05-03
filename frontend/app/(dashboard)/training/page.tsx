@@ -249,7 +249,7 @@ export default function TrainingPage() {
   const grid = active ? daySlots(currentDay) : null;
 
   return (
-    <div className="p-6 space-y-5 max-w-7xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -277,7 +277,7 @@ export default function TrainingPage() {
         <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-white">Generate Rotation Schedule</h2>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] text-[#8b949e] uppercase tracking-wider mb-1">
                   Schedule Name *
