@@ -115,7 +115,7 @@ def start_servers():
     # Start Next.js
     procs.append(subprocess.Popen(
         ["node", "frontend/.next/standalone/server.js"],
-        env={**os.environ, "PORT": str(FRONTEND_PORT)},
+        env={**os.environ, "PORT": str(FRONTEND_PORT), "HOSTNAME": "0.0.0.0"},
     ))
 
     return procs
