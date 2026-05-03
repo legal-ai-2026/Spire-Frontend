@@ -27,8 +27,8 @@ COPY server.py .
 
 # Frontend build artifacts
 COPY --from=frontend-builder /app/frontend/.next/standalone ./frontend/.next/standalone
-COPY --from=frontend-builder /app/frontend/.next/static ./frontend/.next/static
-COPY --from=frontend-builder /app/frontend/public ./frontend/public
+COPY --from=frontend-builder /app/frontend/.next/static ./frontend/.next/standalone/.next/static
+COPY --from=frontend-builder /app/frontend/public ./frontend/.next/standalone/public
 
 # Local data dir
 RUN mkdir -p data_local/uploads data_local/audio
