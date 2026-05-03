@@ -3,14 +3,14 @@ when:
   event: push
 
 steps:
-  - name: backend-check
+  - name: test-backend
     image: python:3.11-slim
     commands:
       - pip install --no-cache-dir -r backend/requirements.txt aiohttp
       - python -m compileall backend server.py
       - python -c "from backend.app.main import create_app; app = create_app(); print(app.title)"
 
-  - name: frontend-build
+  - name: test-frontend
     image: node:20-slim
     commands:
       - cd frontend
@@ -20,8 +20,8 @@ steps:
   - name: build-and-push
     image: gcr.io/kaniko-project/executor:debug
     depends_on:
-      - backend-check
-      - frontend-build
+      - test-backend
+      - test-frontend
     commands:
       - /kaniko/executor --dockerfile=Dockerfile --context=. --destination=ci-cd-zot.ci-cd.svc.cluster.local:5000/c2d2-fe:latest --destination=ci-cd-zot.ci-cd.svc.cluster.local:5000/c2d2-fe:$(echo $CI_COMMIT_SHA | cut -c1-8) --insecure --skip-tls-verify
 
@@ -43,16 +43,18 @@ steps:
           DESIRED=$(kubectl get deployment/c2d2-fe --namespace=staging -o jsonpath='{.spec.replicas}')
           UPDATED=$(kubectl get deployment/c2d2-fe --namespace=staging -o jsonpath='{.status.updatedReplicas}')
           AVAILABLE=$(kubectl get deployment/c2d2-fe --namespace=staging -o jsonpath='{.status.availableReplicas}')
-          if [ "${UPDATED:-0}" = "${DESIRED:-1}" ] && [ "${AVAILABLE:-0}" = "${DESIRED:-1}" ]; then
+          if [ -z "$DESIRED" ]; then DESIRED=1; fi
+          if [ -z "$UPDATED" ]; then UPDATED=0; fi
+          if [ -z "$AVAILABLE" ]; then AVAILABLE=0; fi
+          echo "deployment status desired=$DESIRED updated=$UPDATED available=$AVAILABLE"
+          if [ "$UPDATED" = "$DESIRED" ] && [ "$AVAILABLE" = "$DESIRED" ]; then
             kubectl get deployment/c2d2-fe --namespace=staging
-            kubectl get svc/c2d2-fe --namespace=staging -o wide
             exit 0
           fi
           i=$((i + 1))
           sleep 5
         done
         kubectl get deployment/c2d2-fe --namespace=staging
-        kubectl get pods --namespace=staging -l app=c2d2-fe
         exit 1
     environment:
       K8S_TOKEN:
